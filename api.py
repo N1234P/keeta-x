@@ -93,8 +93,10 @@ def get_ai_summary(prompt):
     try:
         response = openai_client.responses.create(
             model="gpt-5.4",
+            tools=[{"type": "web_search"}],
+            tool_choice="required",
             input=prompt,
-            max_output_tokens=200,
+            max_output_tokens=800,
             temperature=0.2,
         )
 

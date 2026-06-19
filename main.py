@@ -4,7 +4,7 @@ import time
 from setup import PAIR 
 
 
-MINUTES = 5
+MINUTES = 500
 
 
 def run_api():
