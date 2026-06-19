@@ -2,9 +2,9 @@ import api
 import datetime
 import time 
 from setup import PAIR 
+import re 
 
-
-MINUTES = 15
+MINUTES = 10
 
 
 def run_api():
@@ -81,6 +81,7 @@ def github_tracking(previous_pull_requests, previous_release_requests, repos):
             if pr_seen_key not in previous_pull_requests and elapsed_pr.total_seconds() <= MINUTES * 60:
                 previous_pull_requests.add(pr_seen_key)
                 summary = api.get_ai_summary(build_ai_prompt("pull_request", pr))
+                summary = remove_links(summary) # to avoid posting links in the tweet, as per new requirement for PRs
                 message = format_pr_message(repo["name"], pr, summary, pr_event)
                 print(message)
                 api.post_tweet(message)
@@ -180,7 +181,7 @@ Rules:
 - Do not hype.
 - Do not invent details.
 - If unclear, say: "This appears to be a technical/internal update with limited public details."
-- NO LINKS
+
 """
 
     elif event_type == "release":
@@ -216,13 +217,35 @@ Rules:
 - Do not hype.
 - Do not invent details.
 - If unclear, say: "This appears to be a technical/internal update with limited public details."
-- NO LINKS
+
 """
 
     else:
         return """
 Say "This appears to be an update with limited public details."
 """
+def remove_links(text):
+    if not text:
+        return text
+
+    # Convert markdown links: [text](url) -> text
+    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
+
+    # Remove normal URLs
+    text = re.sub(r"https?://\S+", "", text)
+
+    # Remove plain domains like github.com/...
+    text = re.sub(r"\b(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:/\S*)?", "", text)
+
+    # Remove leftover empty markdown/url wrappers
+    text = re.sub(r"\(\s*\)", "", text)
+    text = re.sub(r"\[\s*\]", "", text)
+
+    # Clean spacing
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r" {2,}", " ", text)
+
+    return text.strip()
 
 if __name__ == "__main__": 
     print("Running the github tracking app...")

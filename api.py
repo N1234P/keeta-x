@@ -140,7 +140,7 @@ def get_latest_swaps(pair):
 
 def post_tweet(text):
     try:
-        print("HERE???")
+        
         response = x_client.create_tweet(text=text)
         print(response)
         print(f"Tweet posted successfully! Tweet ID: {response.data['id']}")
