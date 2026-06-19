@@ -94,7 +94,7 @@ def get_ai_summary(prompt):
         response = openai_client.responses.create(
             model="gpt-5.4",
             input=prompt,
-            max_output_tokens=80,
+            max_output_tokens=200,
             temperature=0.2,
         )
 

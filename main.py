@@ -4,7 +4,7 @@ import time
 from setup import PAIR 
 
 
-MINUTES = 5
+MINUTES = 500
 
 
 def run_api():
@@ -62,11 +62,13 @@ def github_tracking(previous_pull_requests, previous_release_requests, repos):
             pr_updated_time = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
             elapsed_pr = now - pr_updated_time
             if pr['url'] not in previous_pull_requests and elapsed_pr.total_seconds() <= MINUTES * 60:
+                print(pr['url']) 
                 previous_pull_requests.add(pr['url'])
                 summary = api.get_ai_summary(build_ai_prompt("pull_request", pr))
                 message = format_pr_message(repo["name"], pr, summary)
+                print(message)
                 api.post_tweet(message) 
-                print(message) 
+               
                 
         releases = api.get_releases(repo["name"])
         
@@ -88,14 +90,14 @@ def format_pr_message(repo_name, pr, summary=None):
     head_branch = pr.get("head_branch", "unknown")
     base_branch = pr.get("base_branch", "unknown")
 
-    summary_text = f"\n🧠 Overview: {summary}\n" if summary else ""
+    summary_text = f"\n\n🧠 Overview:\n{summary}" if summary else ""
 
     message = (
         f"🐆 Keeta GitHub PR Opened\n\n"
         f"📦 Repo: {repo_name}\n"
         f"🔀 PR #{number}: {title}\n"
         f"🌿 Branch: {head_branch} → {base_branch}\n"
-        f"👤 Opened by: @{user}\n"
+        f"👤 Opened by: @{user}"
         f"{summary_text}"
     )
 
@@ -108,19 +110,18 @@ def format_release_message(repo_name, release, summary=None):
     prerelease = release.get("prerelease", False)
 
     release_type = "Prerelease" if prerelease else "Release"
-    summary_text = f"\n🧠 Overview: {summary}\n" if summary else ""
+    summary_text = f"\n\n🧠 Overview:\n{summary}" if summary else ""
 
     message = (
         f"🐆 Keeta GitHub {release_type}\n\n"
         f"📦 Repo: {repo_name}\n"
         f"🏷️ Version: {tag_name}\n"
-        f"🚀 {name}\n"
-        f"{summary_text}\n"
+        f"🚀 {name}"
+        f"{summary_text}\n\n"
         f"{url}"
     )
 
-    return message
-
+    return message.strip()
 
 def build_ai_prompt(event_type, item):
     if event_type == "pull_request":
@@ -144,16 +145,20 @@ Description:
 
 URL: {url}
 
-Write a short paragraph maximum. 
+Write for Keeta followers who may not be technical.
+
+Format:
+1. Start with one plain-English sentence explaining what happened and why it matters. Do not mention the author.
+2. Add one short paragraph with 1-2 simple sentences of context.
+3. Add 1-2 bullet points only if useful cases can be inferred.
 
 Rules:
-- Max 100 words.
-- Be simple and factual.
-- Focus on what the PR appears to change.
-- Do not hype it.
+- Keep it short and easy to scan.
+- Avoid jargon; explain technical terms briefly if used.
+- No file-name lists.
+- Do not hype.
 - Do not invent details.
-- If the description is empty or unclear, infer only from the title and branch names.
-- If still unclear, say: "This appears to be a technical/internal update."
+- If unclear, say: "This appears to be a technical/internal update with limited public details."
 """
 
     elif event_type == "release":
@@ -175,15 +180,20 @@ Release notes:
 
 URL: {url}
 
-Write a short paragraph maximum.
+Write for Keeta followers who may not be technical.
+
+Format:
+1. Start with one plain-English sentence explaining what happened and why it matters. Do not mention the author.
+2. Add one short paragraph with 1-2 simple sentences of context.
+3. Add 1-2 bullet points only if useful cases can be inferred.
 
 Rules:
-- Max 100 words.
-- Be simple and factual.
-- Focus on what changed in the release.
-- Do not hype it.
+- Keep it short and easy to scan.
+- Avoid jargon; explain technical terms briefly if used.
+- No file-name lists.
+- Do not hype.
 - Do not invent details.
-- If release notes are empty or unclear, say: "This appears to be a version/tag release with limited public details."
+- If unclear, say: "This appears to be a technical/internal update with limited public details."
 """
 
     else:
