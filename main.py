@@ -159,6 +159,7 @@ Rules:
 - Do not hype.
 - Do not invent details.
 - If unclear, say: "This appears to be a technical/internal update with limited public details."
+- NO LINKS
 """
 
     elif event_type == "release":
@@ -194,6 +195,7 @@ Rules:
 - Do not hype.
 - Do not invent details.
 - If unclear, say: "This appears to be a technical/internal update with limited public details."
+- NO LINKS
 """
 
     else:
