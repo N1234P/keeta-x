@@ -4,7 +4,7 @@ import time
 from setup import PAIR 
 
 
-MINUTES = 5
+MINUTES = 15
 
 
 def run_api():
@@ -61,6 +61,8 @@ def github_tracking(previous_pull_requests, previous_release_requests, repos):
         for pr in pull_requests:
             pr_updated_time = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
             elapsed_pr = now - pr_updated_time
+            if pr['url'] not in previous_pull_requests:
+                print(f"Found new PR: {pr['url']} ({elapsed_pr.total_seconds() / 60:.1f} minutes old)")
             if pr['url'] not in previous_pull_requests and elapsed_pr.total_seconds() <= MINUTES * 60:
                 print(pr['url']) 
                 previous_pull_requests.add(pr['url'])
