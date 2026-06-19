@@ -39,10 +39,9 @@ def get_github_repos(org="KeetaNetwork"):
 def get_pull_requests(repo, org="KeetaNetwork"):
     endpoint = (
         f"https://api.github.com/repos/{org}/{repo}/pulls"
-        f"?state=open&per_page=10&sort=created&direction=desc"
+        f"?state=all&per_page=10&sort=updated&direction=desc"
     )
 
-    
     data = fetch_response(endpoint)
 
     pull_requests = []
@@ -56,6 +55,8 @@ def get_pull_requests(repo, org="KeetaNetwork"):
             "url": pr["html_url"],
             "created_at": pr["created_at"],
             "updated_at": pr["updated_at"],
+            "closed_at": pr.get("closed_at"),
+            "merged_at": pr.get("merged_at"),
             "user": pr.get("user", {}).get("login", "unknown"),
             "head_branch": pr.get("head", {}).get("ref", "unknown"),
             "base_branch": pr.get("base", {}).get("ref", "unknown"),

@@ -59,21 +59,33 @@ def github_tracking(previous_pull_requests, previous_release_requests, repos):
         pull_requests = api.get_pull_requests(repo["name"])
         
         for pr in pull_requests:
-            pr_updated_time = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
-            elapsed_pr = now - pr_updated_time
-            if pr['url'] not in previous_pull_requests:
-                print(f"Found new PR: {pr['url']} ({elapsed_pr.total_seconds() / 60:.1f} minutes old)")
-            if pr['url'] not in previous_pull_requests and elapsed_pr.total_seconds() <= MINUTES * 60:
-                print(pr['url']) 
-                previous_pull_requests.add(pr['url'])
+            if pr.get("merged_at"):
+                pr_event = "merged"
+                pr_time_str = pr["merged_at"]
+            elif pr.get("state") == "open":
+                pr_event = "opened"
+                pr_time_str = pr["created_at"]
+            else:
+                continue
+            pr_time = datetime.datetime.strptime(
+                pr_time_str,
+                "%Y-%m-%dT%H:%M:%SZ"
+            ).replace(tzinfo=datetime.timezone.utc)
+
+            elapsed_pr = now - pr_time
+            pr_seen_key = pr["url"] + ":" + pr_event
+
+            if pr_seen_key not in previous_pull_requests:
+                print(f"Found PR {pr_event}: {pr['url']} ({elapsed_pr.total_seconds() / 60:.1f} minutes old)")
+
+            if pr_seen_key not in previous_pull_requests and elapsed_pr.total_seconds() <= MINUTES * 60:
+                previous_pull_requests.add(pr_seen_key)
                 summary = api.get_ai_summary(build_ai_prompt("pull_request", pr))
-                message = format_pr_message(repo["name"], pr, summary)
+                message = format_pr_message(repo["name"], pr, summary, pr_event)
                 print(message)
-                api.post_tweet(message) 
-               
-                
+                api.post_tweet(message)
+                    
         releases = api.get_releases(repo["name"])
-        
         for release in releases:
             release_updated_time = datetime.datetime.strptime(release["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
             elapsed_release = now - release_updated_time
@@ -85,21 +97,28 @@ def github_tracking(previous_pull_requests, previous_release_requests, repos):
                 print(message) 
 
 
-def format_pr_message(repo_name, pr, summary=None):
+def format_pr_message(repo_name, pr, summary=None, pr_event="opened"):
     title = pr.get("title", "Untitled PR")
     number = pr.get("number", "?")
     user = pr.get("user", "unknown")
     head_branch = pr.get("head_branch", "unknown")
     base_branch = pr.get("base_branch", "unknown")
 
+    if pr_event == "merged":
+        header = "🐆 Keeta GitHub PR Merged"
+        user_line = f"👤 Originally opened by: @{user}"
+    else:
+        header = "🐆 Keeta GitHub PR Opened"
+        user_line = f"👤 Opened by: @{user}"
+
     summary_text = f"\n\n🧠 Overview:\n{summary}" if summary else ""
 
     message = (
-        f"🐆 Keeta GitHub PR Opened\n\n"
+        f"{header}\n\n"
         f"📦 Repo: {repo_name}\n"
         f"🔀 PR #{number}: {title}\n"
         f"🌿 Branch: {head_branch} → {base_branch}\n"
-        f"👤 Opened by: @{user}"
+        f"{user_line}"
         f"{summary_text}"
     )
 
