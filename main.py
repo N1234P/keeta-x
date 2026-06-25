@@ -17,7 +17,7 @@ def run_api():
     while True:
         github_tracking(previous_pull_requests, previous_release_requests, repos)
         whale_tracking(PAIR, seen, launch_time) 
-        time.sleep(60) 
+        time.sleep(90) 
 
 
 def whale_tracking(PAIR, seen, launch_time):

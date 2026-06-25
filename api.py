@@ -43,6 +43,8 @@ def get_pull_requests(repo, org="KeetaNetwork"):
     )
 
     data = fetch_response(endpoint)
+    if not data:
+        return [] 
 
     pull_requests = []
 
@@ -73,7 +75,9 @@ def get_releases(repo, org="KeetaNetwork"):
 
    
     data = fetch_response(endpoint)
-
+    if not data:
+        return []
+    
     releases = []
 
     for release in data:
